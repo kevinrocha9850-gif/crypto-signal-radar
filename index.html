@@ -1,0 +1,195 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#08111f"><title>Crypto Signal Radar V8.3.5</title><style>
+body{margin:0;background:#08111f;color:#eef4ff;font-family:system-ui,-apple-system,sans-serif}main{max-width:1000px;margin:auto;padding:16px}.card{background:#101d30;border:1px solid #263a55;border-radius:16px;padding:15px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}button,input,select{background:#14253b;color:#fff;border:1px solid #36506e;border-radius:9px;padding:10px}button{cursor:pointer}.buy{color:#48e38d}.sell{color:#ff7180}.rebound{color:#ffae55}.hold{color:#f4cb55}.muted{color:#9aabc0;font-size:13px}.big{font-size:23px;font-weight:800}.k{display:flex;justify-content:space-between;border-bottom:1px solid #24364c;padding:6px 0}.status{font-size:13px;padding:6px 10px;border-radius:99px;background:#182b43}.ok{color:#48e38d}.bad{color:#ff7180}.warn{color:#f4cb55}.pill{padding:5px 9px;border-radius:99px;background:#182b43}.notice{background:#2b2410;color:#f5d778;padding:10px;border-radius:9px;font-size:13px}.metric{font-size:18px;font-weight:700}.small{font-size:12px;color:#9aabc0}.table{width:100%;border-collapse:collapse}.table td,.table th{padding:7px;border-bottom:1px solid #24364c;text-align:left}.danger{background:#331820}.success{background:#173324}.active{border-color:#36506e}.trade-card{background:#0d1a2b;border:1px solid #263a55;border-radius:12px;padding:12px;margin-top:8px}.trade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}.okbg{background:#173324}.warnbg{background:#2b2410}.badbg{background:#331820}.subtle{opacity:.9}.signal-alert{border-left:4px solid #48e38d}.exit-alert{border-left:4px solid #ff7180}.history-win{color:#48e38d}.history-loss{color:#ff7180}.statbox{background:#0d1a2b;border:1px solid #263a55;border-radius:12px;padding:12px}.trade-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.mono{font-variant-numeric:tabular-nums}.table-wrap{overflow:auto}
+</style></head><body><main>
+<h1>📡 Crypto Signal Radar V8.3.5</h1><p class="muted">Radar de señales manuales · Binance como fuente de mercado · vos ejecutás todas las compras y ventas.</p>
+<div class="card"><div class="row"><span id="status" class="status">🔄 Conectando con Binance…</span><button id="notify">🔔 Activar notificaciones</button><button id="tg">📲 Probar Telegram</button><button id="reload">↻ Actualizar</button><button id="analyzeNow">🔎 ANALIZAR AHORA</button></div><div class="row" style="margin-top:10px"><label>Objetivo neto <input id="target" type="number" value="1.5" min="0.5" max="5" step="0.1" style="width:60px">%</label><label>Comisión compra <input id="bf" type="number" value="0.2" min="0" max="2" step="0.05" style="width:60px">%</label><label>Comisión venta <input id="sf" type="number" value="0.2" min="0" max="2" step="0.05" style="width:60px">%</label></div><p class="notice">🔒 Sin API Key de Binance. La app no compra, no vende, no retira fondos y no puede acceder a tu saldo. Los datos de mercado son públicos.</p><p class="muted">🧠 Análisis automático: <b>1h</b> para contexto/tendencia + <b>15m</b> para entrada/momentum/volumen. No necesitás elegir marco temporal. <b>La compra solo aparece si la entrada está en fase TEMPRANA.</b></p></div>
+<div id="analysisNow" class="card"><h3>🔎 Análisis ahora</h3><p class="muted">Cargando…</p></div>
+<div id="cards" class="grid"></div>
+<div class="card"><h2>🧾 Mis operaciones</h2><div class="row"><select id="sym"><option>BTCUSDT</option><option>ETHUSDT</option><option>SOLUSDT</option><option>XRPUSDT</option><option>DOTUSDT</option></select><select id="platform"><option>Lemon</option><option>Binance</option><option>Ripio</option><option>Fiwind</option><option>Brubank</option><option>Otra</option></select><input id="capital" type="number" step="0.01" placeholder="Invertí (ARS)"><input id="qty" type="number" step="any" placeholder="Cantidad de cripto recibida"><button id="bought">✅ REGISTRAR COMPRA</button></div><p class="muted">🇦🇷 Registrá solo <b>cuántos ARS pagaste</b> y <b>cuánta cripto recibiste</b>. La billetera puede usar su propia cotización; el Radar no la supone. El P&L en ARS será una estimación basada en el movimiento del activo, no una cotización exacta de tu billetera.</p><div id="trade" class="muted" style="margin-top:10px">Sin operaciones activas.</div></div>
+<div class="card"><h2>📚 Historial y estadísticas</h2><div id="stats" class="grid"></div><div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Fecha</th><th>Par</th><th>Plataforma</th><th>Invertido ARS</th><th>Entrada</th><th>Salida</th><th>P&L neto</th><th>Motivo</th><th>Duración</th></tr></thead><tbody id="history"></tbody></table></div><div class="row" style="margin-top:10px"><button id="clearHistory" class="danger">🗑️ Borrar historial</button></div></div>
+<div class="card"><h2>🕐 Historial de señales</h2>
+<p class="muted">Guarda cuándo apareció una señal y cuándo cambió o desapareció. Así podremos medir oportunidades aunque no hayas ejecutado una operación.</p>
+<div class="table-wrap"><table class="table"><thead><tr><th>Hora</th><th>Par</th><th>Evento</th><th>Precio</th><th>Confluencia</th><th>1h</th><th>15m</th><th>Volumen</th><th>Entrada</th></tr></thead><tbody id="signalHistory"></tbody></table></div>
+<div class="row" style="margin-top:10px"><button id="clearSignalHistory" class="danger">🗑️ Borrar historial de señales</button></div></div>
+<div class="card"><h2>🧪 Backtesting</h2><p class="muted">Prueba la lógica multi-timeframe con datos históricos disponibles de Binance. Sirve para medir el comportamiento histórico; no garantiza resultados futuros.</p><div class="row"><button id="backtest">▶ Ejecutar prueba</button><span id="btStatus" class="muted"></span></div><div id="btResult" style="margin-top:12px"></div></div>
+<div class="card"><h2>🔔 Últimos avisos</h2><div id="events" class="muted">Todavía no hay avisos.</div></div>
+<div class="card"><h3>🛡️ Regla principal</h3><p class="muted">Analizar 1h + 15m → ponderar la confluencia → permitir contradicciones menores → bloquear contradicciones críticas → vos comprás → “COMPRÉ” → monitorear cada operación → avisar al alcanzar la ganancia neta configurada o al invalidarse la hipótesis → vos vendés manualmente.</p><p class="muted">La puntuación es ponderada: <b>no hace falta que todos los indicadores coincidan</b>. La compra requiere confluencia suficiente en 1h + 15m y no tener una contradicción estructural crítica.</p></div>
+</main><script>
+const S=['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','DOTUSDT'];
+let data={},trades=JSON.parse(localStorage.getItem('csr_trades_v835')||'[]'),history=JSON.parse(localStorage.getItem('csr_history_v835')||'[]'),lastSignals=JSON.parse(localStorage.getItem('csr_last_signals_v835')||'{}'),signalHistory=JSON.parse(localStorage.getItem('csr_signal_history_v835')||'[]');
+const $=id=>document.getElementById(id),fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:8});
+function save(){localStorage.setItem('csr_trades_v835',JSON.stringify(trades));localStorage.setItem('csr_history_v835',JSON.stringify(history));localStorage.setItem('csr_last_signals_v835',JSON.stringify(lastSignals));localStorage.setItem('csr_signal_history_v835',JSON.stringify(signalHistory))}
+function notifyUser(title,body){try{if('Notification' in window&&Notification.permission==='granted')new Notification(title,{body})}catch(e){}}
+function ema(a,p){let k=2/(p+1),e=a[0],o=[e];for(let i=1;i<a.length;i++){e=a[i]*k+e*(1-k);o.push(e)}return o}
+function rsi(a,p=14){if(a.length<p+1)return a.map(()=>50);let g=0,l=0;for(let i=1;i<=p;i++){let d=a[i]-a[i-1];g+=Math.max(d,0);l+=Math.max(-d,0)}g/=p;l/=p;let o=Array(p).fill(50);o.push(100-100/(1+g/(l||1e-9)));for(let i=p+1;i<a.length;i++){let d=a[i]-a[i-1];g=(g*(p-1)+Math.max(d,0))/p;l=(l*(p-1)+Math.max(-d,0))/p;o.push(100-100/(1+g/(l||1e-9)))}return o}
+function macd(a){let f=ema(a,12),s=ema(a,26),m=a.map((_,i)=>f[i]-s[i]),sig=ema(m,9);return{m,sig,h:m.map((x,i)=>x-sig[i])}}
+function structureState(c){if(c.length<16)return 'NEUTRAL';const a=c.slice(-8),b=c.slice(-16,-8),ah=Math.max(...a),bh=Math.max(...b),al=Math.min(...a),bl=Math.min(...b);if(ah>bh&&al>bl)return 'ALCISTA';if(ah<bh&&al<bl)return 'BAJISTA';return 'NEUTRAL'}
+function analyze(rows){
+  if(!rows||rows.length<80)return null;
+  const closed=rows.filter(x=>x.closed);
+  if(closed.length<80)return null;
+  const c=closed.map(x=>+x.close),v=closed.map(x=>+x.volume),i=c.length-1;
+  const e20=ema(c,20),e50=ema(c,50),R=rsi(c),M=macd(c);
+  const prior=v.slice(Math.max(0,i-20),i),avg=prior.reduce((a,b)=>a+b,0)/(prior.length||1),vr=v[i]/(avg||1);
+  const trend=c[i]>e20[i]&&e20[i]>e50[i]?'ALCISTA':c[i]<e20[i]&&e20[i]<e50[i]?'BAJISTA':'LATERAL';
+  const structure=structureState(c);
+  const priceAbove=c[i]>e20[i], emaAligned=c[i]>e20[i]&&e20[i]>e50[i], emaUp=e20[i]>e20[i-3];
+  const bull=M.m[i]>M.sig[i], histUp=M.h[i]>M.h[i-1], rsiValue=R[i];
+  const recentLow=Math.min(...c.slice(-20,-1)), recentHigh=Math.max(...c.slice(-20,-1));
+  const nearSupport=c[i]<=recentLow*1.012 && c[i]>c[Math.max(0,i-1)];
+  const nearResistance=c[i]>=recentHigh*0.988;
+
+  // Filtro de entrada temprana:
+  // evita perseguir una subida ya extendida, aunque la confluencia siga siendo alta.
+  const ret4=c[i-4]?c[i]/c[i-4]-1:0;
+  const ret12=c[i-12]?c[i]/c[i-12]-1:0;
+  const distEma20=c[i]/e20[i]-1;
+  const range20=Math.max(...c.slice(-20))-Math.min(...c.slice(-20));
+  const position20=range20>0?(c[i]-Math.min(...c.slice(-20)))/range20:0.5;
+  const recentHigh12=Math.max(...c.slice(-12,-1));
+  const breakoutRecent=c[i]>recentHigh12;
+  const pullbackReclaim=nearSupport && c[i]>c[Math.max(0,i-1)];
+  const earlyMomentum=ret4>=0.0015 && ret4<=0.028 && ret12<=0.055;
+  const notExtended=distEma20<=0.025 && position20<=0.88 && rsiValue<=70;
+  const notLate=ret12<=0.06 && !(nearResistance && ret4>0.02);
+  const earlyEntry=(earlyMomentum||pullbackReclaim||breakoutRecent) && notExtended && notLate;
+
+  let score=0;
+  score += trend==='ALCISTA'?25:trend==='LATERAL'?10:0;
+  score += structure==='ALCISTA'?15:structure==='NEUTRAL'?7:0;
+  score += emaAligned?10:(priceAbove||emaUp?6:0);
+  score += nearSupport?10:(priceAbove?5:0);
+  score += bull?10:4;
+  score += histUp?5:0;
+  const volumeState=vr>=1.5?'FUERTE':vr>=1.0?'CONFIRMA':vr>=0.65?'NEUTRO':'DEBIL';
+  score += volumeState==='FUERTE'?10:(volumeState==='CONFIRMA'?7:(volumeState==='NEUTRO'?4:0));
+  score += (rsiValue>=50&&rsiValue<=68)?10:((rsiValue>=40&&rsiValue<50)||(rsiValue>68&&rsiValue<=72)?5:0);
+  // La entrada tardía no se compensa con una confluencia alta.
+  if(!earlyEntry) score-=12;
+  score=Math.min(100,Math.max(0,Math.round(score)));
+
+  const criticalBearish=(trend==='BAJISTA'&&structure==='BAJISTA'&&!bull&&vr>=1.2);
+  const weakStructureAgainst=(trend==='BAJISTA'&&structure==='BAJISTA');
+  const invalid=criticalBearish || (weakStructureAgainst && rsiValue<46);
+  return{
+    p:c[i],R:rsiValue,trend,structure,vr,score,nearSupport,nearResistance,
+    ret4,ret12,distEma20,position20,earlyEntry,breakoutRecent,pullbackReclaim,
+    entryStage:earlyEntry?'TEMPRANA':'AVANZADA',volumeState,
+    checks:{trend:trend==='ALCISTA',structure:structure==='ALCISTA',priceAbove,emaAligned,emaUp,bull,histUp,rsiOk:rsiValue>=50&&rsiValue<=68,volumeOk:vr>=1,earlyEntry},
+    criticalBearish,invalid,time:closed[i].time
+  };
+}
+function combined(s){
+  const h=analyze(data[s]?.['1h']),m=analyze(data[s]?.['15m']);if(!h||!m)return null;
+  const confidence=Math.round(h.score*.60+m.score*.40),critical=h.invalid||(h.trend==='BAJISTA'&&m.trend==='BAJISTA'&&h.structure==='BAJISTA'&&m.structure==='BAJISTA');
+  const buy=confidence>=70&&h.score>=60&&m.score>=65&&m.earlyEntry&&!critical,invalid=critical;let signal=buy?'🟢 COMPRAR':'🟡 MANTENER';
+  let reason=buy?`Confluencia favorable: 1h ${h.score}/100 + 15m ${m.score}/100 + entrada ${m.entryStage.toLowerCase()}. Se evita perseguir movimientos ya extendidos.`:`Confluencia insuficiente, entrada tardía o contradicción crítica: 1h ${h.score}/100 + 15m ${m.score}/100.`;
+  if(invalid){signal='🔴 SALIR';reason='La hipótesis alcista perdió validez por una contradicción estructural relevante.'}
+  return{h,m,buy,invalid,signal,reason,confidence,p:m.p,targetNet:+$('target')?.value||1.5}
+}
+async function fetchMarket(symbol,tf,limit=220){const bases=['https://data-api.binance.vision/api/v3','https://api.binance.com/api/v3','https://api1.binance.com/api/v3','https://api2.binance.com/api/v3','https://api3.binance.com/api/v3'];let last='';for(const base of bases){try{const u=base+'/klines?symbol='+encodeURIComponent(symbol)+'&interval='+tf+'&limit='+limit;const r=await fetch(u,{cache:'no-store'});if(!r.ok){last='HTTP '+r.status;continue}const d=await r.json();if(!Array.isArray(d)||!d.length)throw Error('Respuesta vacía');return d.map(x=>({time:x[0],open:x[1],high:x[2],low:x[3],close:x[4],volume:x[5],closed:Date.now()>x[6]}))}catch(e){last=e.message||String(e)}}throw Error('No se pudo acceder a Binance ('+last+').')}
+async function load(){let ok=0,errors=[];$('status').textContent='🔄 Consultando Binance…';$('status').className='status warn';for(const s of S){data[s]={};for(const tf of ['1h','15m'])try{data[s][tf]=await fetchMarket(s,tf,220)}catch(e){errors.push(s+' '+tf+': '+e.message)}if(data[s]['1h']&&data[s]['15m']){render(s);ok++}}updateTrade();if(ok===S.length){$('status').textContent='🟢 Binance online · '+ok+'/'+S.length+' activos';$('status').className='status ok'}else if(ok){$('status').textContent='🟡 Binance parcial · '+ok+'/'+S.length+' activos';$('status').className='status warn'}else{$('status').textContent='🔴 Binance no disponible';$('status').className='status bad'}if(errors.length)console.warn(errors)}
+function render(s){
+ const a=combined(s);if(!a)return;let cl=a.signal.includes('COMPRAR')?'buy':a.signal.includes('SALIR')?'sell':'hold',h=a.h,m=a.m;
+ let c=$('c'+s);if(!c){c=document.createElement('div');c.className='card';c.id='c'+s;$('cards').append(c)}
+ const checks=[['Tendencia 1h',h.checks.trend],['Estructura 1h',h.checks.structure],['Precio > EMA20',m.checks.priceAbove],['EMA20 ascendente',m.checks.emaUp],['MACD alcista',m.checks.bull],['Momentum MACD',m.checks.histUp],['RSI en zona útil',m.checks.rsiOk],['Entrada temprana',m.checks.earlyEntry]];
+ const positives=checks.filter(x=>x[1]).map(x=>'✓ '+x[0]),negatives=checks.filter(x=>!x[1]).map(x=>'⚠ '+x[0]);
+ c.innerHTML=`<div class="row" style="justify-content:space-between"><b>${s}</b><b class="${cl}">${a.signal}</b></div><div class="big">${fmt(a.p)}</div><div>${a.reason}</div>
+ <div class="k"><span>Confluencia ponderada</span><b>${a.confidence}/100</b></div><div class="k"><span>1h</span><b>${h.trend} · ${h.structure} · ${h.score}/100</b></div>
+ <div class="k"><span>15m</span><b>${m.trend} · ${m.structure} · ${m.score}/100</b></div><div class="k"><span>RSI 15m</span><b>${m.R.toFixed(1)}</b></div>
+ <div class="k"><span>Volumen 15m / 20 previas</span><b>${m.vr.toFixed(2)}×</b></div>
+ <div class="small" style="margin-top:8px"><b>A favor:</b> ${positives.join(' · ')||'—'}</div><div class="small"><b>Volumen:</b> ${m.volumeState==='FUERTE'?'✓ Fuerte confirmación':m.volumeState==='CONFIRMA'?'✓ Acompaña':m.volumeState==='NEUTRO'?'• Neutral, no bloquea':'⚠ Débil'}</div><div class="small"><b>En contra:</b> ${negatives.join(' · ')||'—'}</div>
+ <div class="small">⏱️ Entrada: <b>${m.entryStage}</b> · últimas 4 velas ${(m.ret4*100).toFixed(2)}% · distancia EMA20 ${(m.distEma20*100).toFixed(2)}%</div><div class="small" style="margin-top:8px">🎯 Objetivo neto de referencia: ${a.targetNet.toFixed(2)}%. La señal no garantiza resultado.</div>`;
+}
+function targetPrice(e,t,b,s){return e*(1+b/100)*(1+t/100)/(1-s/100)}function netPnl(e,p,b,s){return((p*(1-s/100))/(e*(1+b/100))-1)*100}function age(ms){let m=Math.floor(ms/60000),h=Math.floor(m/60),d=Math.floor(h/24);if(d)return d+'d '+h%24+'h';if(h)return h+'h '+m%60+'m';return m+'m'}
+function updateTrade(){
+ if(!trades.length){$('trade').textContent='Sin operaciones activas.';return}
+ const t=+$('target').value,b=+$('bf').value,s=+$('sf').value;
+ $('trade').innerHTML=trades.map((tr,idx)=>{
+   const a=combined(tr.s);if(!a)return '';
+   const p=netPnl(tr.e,a.p,b,s),tp=targetPrice(tr.e,t,b,s),targetHit=p>=t,invalid=a.invalid;
+   const arsBase=+tr.ars||+tr.c||0,arsPnl=arsBase*p/100,arsValue=arsBase+arsPnl;
+   let state=targetHit?'🎯 OBJETIVO ALCANZADO':invalid?'🔴 SALIR · HIPÓTESIS INVALIDADA':'🟡 MANTENER · HIPÓTESIS VIGENTE';
+   let cls=targetHit?'okbg':invalid?'badbg':'warnbg';
+   if((targetHit||invalid)&&tr.lastAlert!==state){tr.lastAlert=state;save();notifyUser(tr.s+' '+state,'Precio '+fmt(a.p)+' · P&L neto '+p.toFixed(2)+'%')}
+   return `<div class="trade-card ${cls}"><div class="row" style="justify-content:space-between"><b>${tr.s}</b><span>${state}</span></div>
+   <div class="small">🏦 ${tr.platform||'Otra'} · 🇦🇷 Inversión: <b>$${fmt(arsBase)} ARS</b> · 🪙 ${fmt(tr.q||0)} ${tr.s.replace('USDT','')}</div>
+   <div class="trade-grid">
+   <div><span class="small">Precio entrada</span><br><b>${fmt(tr.e)}</b></div>
+   <div><span class="small">Actual</span><br><b>${fmt(a.p)}</b></div>
+   <div><span class="small">P&L neto</span><br><b class="${p>=0?'buy':'sell'}">${p.toFixed(2)}%</b></div>
+   <div><span class="small">P&L estimado</span><br><b class="${arsPnl>=0?'buy':'sell'}">${arsPnl>=0?'+':''}$${fmt(arsPnl)} ARS</b></div>
+   <div><span class="small">Valor estimado</span><br><b>$${fmt(arsValue)} ARS</b></div>
+   <div><span class="small">Objetivo neto</span><br><b>${t.toFixed(2)}%</b></div>
+   <div><span class="small">Precio objetivo</span><br><b>${fmt(tp)}</b></div>
+   <div><span class="small">Tiempo abierta</span><br><b>${age(Date.now()-tr.at)}</b></div></div>
+   <div class="small" style="margin-top:8px">Hipótesis: ${tr.hypothesis||'Contexto 1h alcista + confirmación 15m.'}</div>
+   <div class="trade-actions"><button onclick="closeTrade(${idx},'OBJETIVO ALCANZADO')">🎯 Registrar salida</button><button onclick="closeTrade(${idx},'HIPÓTESIS INVALIDADA')">🔴 Registrar salida</button><button onclick="closeTrade(${idx},'SALIDA MANUAL')">✋ Cerrar manualmente</button></div></div>`
+ }).join('');
+ renderHistory()
+}
+window.closeTrade=(i,reason)=>{const tr=trades[i],a=combined(tr.s);if(!tr||!a)return;const exit=prompt('Precio real de venta para '+tr.s+':',String(a.p));if(exit===null)return;const p=netPnl(tr.e,+exit,+$('bf').value,+$('sf').value);history.unshift({id:Date.now(),s:tr.s,e:tr.e,x:+exit,c:tr.c,ars:+tr.ars||+tr.c||0,q:+tr.q||0,platform:tr.platform||'Otra',executionArsPerCoin:tr.executionArsPerCoin,binanceEntry:tr.binanceEntry,at:tr.at,xt:Date.now(),p,reason});trades.splice(i,1);save();fetch('/api/trades/close',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:tr.id,exit:+exit,pnl:p,reason})}).catch(()=>{});updateTrade();renderHistory()};
+function renderHistory(){const rows=history.slice(0,100);$('history').innerHTML=rows.length?rows.map(h=>`<tr><td>${new Date(h.at).toLocaleString()}</td><td><b>${h.s}</b></td><td>${h.platform||'Otra'}</td><td>$${fmt(h.ars||h.c||0)}</td><td>${fmt(h.e)}</td><td>${fmt(h.x)}</td><td class="${h.p>=0?'history-win':'history-loss'}"><b>${h.p.toFixed(2)}%</b></td><td>${h.reason}</td><td>${age(h.xt-h.at)}</td></tr>`).join(''):'<tr><td colspan="9" class="muted">Todavía no hay operaciones cerradas.</td></tr>';const wins=history.filter(x=>x.p>=0),losses=history.filter(x=>x.p<0),sum=history.reduce((a,x)=>a+x.p,0),avg=history.length?sum/history.length:0,winRate=history.length?wins.length/history.length*100:0;const capital=history.reduce((a,x)=>a+(+x.c||0),0),weighted=capital?history.reduce((a,x)=>a+(+x.c||0)*x.p/100,0):0;$('stats').innerHTML=`<div class="statbox"><div class="metric">${history.length}</div><div class="small">Operaciones cerradas</div></div><div class="statbox"><div class="metric">${winRate.toFixed(1)}%</div><div class="small">Tasa de acierto</div></div><div class="statbox"><div class="metric">${avg.toFixed(2)}%</div><div class="small">P&L medio</div></div><div class="statbox"><div class="metric">${sum.toFixed(2)}%</div><div class="small">Suma de P&L</div></div><div class="statbox"><div class="metric">${wins.length}/${losses.length}</div><div class="small">Ganadoras / perdedoras</div></div><div class="statbox"><div class="metric">${weighted.toFixed(2)}%</div><div class="small">Aporte ponderado por capital</div></div>`}
+$('clearHistory').onclick=()=>{if(!history.length)return;if(confirm('¿Borrar todo el historial?')){history=[];save();renderHistory()}};
+$('clearSignalHistory').onclick=()=>{if(!signalHistory.length)return;if(confirm('¿Borrar todo el historial de señales?')){signalHistory=[];save();renderSignalHistory()}};
+
+function recordSignalEvent(s,a,event){
+  const now=Date.now();
+  const last=signalHistory.filter(x=>x.s===s).slice(-1)[0];
+  if(event==='APARECIÓ' && last && last.state===a.signal) return;
+  if(event==='DESAPARECIÓ' && (!last || last.state!=='🟢 COMPRAR')) return;
+  signalHistory.push({ts:now,s,event,state:a.signal,p:a.p,confidence:a.confidence,h:a.h.score,m:a.m.score,vr:a.m.vr,entry:a.m.entryStage});
+  if(signalHistory.length>300) signalHistory=signalHistory.slice(-300);
+  save();
+}
+function signalLabel(signal){
+  if(signal==='🟢 COMPRAR') return '🟢 COMPRAR';
+  if(signal==='🔴 SALIR') return '🔴 SALIR';
+  return '🟡 MANTENER';
+}
+function renderSignalHistory(){
+  const rows=signalHistory.slice().reverse().slice(0,100);
+  $('signalHistory').innerHTML=rows.length?rows.map(x=>`<tr><td>${new Date(x.ts).toLocaleString()}</td><td><b>${x.s}</b></td><td>${x.event}</td><td>${fmt(x.p)}</td><td>${x.confidence}/100</td><td>${x.h}/100</td><td>${x.m}/100</td><td>${Number(x.vr).toFixed(2)}×</td><td>${x.entry}</td></tr>`).join(''):'<tr><td colspan="9" class="muted">Todavía no hay señales registradas.</td></tr>';
+}
+function renderAnalysis(){
+  const items=S.map(s=>({s,a:combined(s)})).filter(x=>x.a);
+  const found=items.filter(x=>x.a.buy);
+  const exits=items.filter(x=>x.a.invalid&&trades.some(t=>t.s===x.s));
+  const previous=Object.assign({},lastSignals);
+  if(!found.length&&!exits.length){
+    $('analysisNow').innerHTML='<h3>🔎 Señales relevantes</h3><p class="muted">No hay una nueva configuración de entrada con confluencia suficiente. El radar no exige que todos los indicadores coincidan; permite contradicciones menores si el conjunto acompaña.</p>';
+  }else{
+    $('analysisNow').innerHTML='<h3>🔎 Señales relevantes</h3>'+
+      exits.map(({s,a})=>`<div class="trade-card exit-alert"><b>${s} · 🔴 SALIR</b><br><span class="small">${a.reason} · P&L de la operación activa se muestra abajo.</span></div>`).join('')+
+      found.map(({s,a})=>`<div class="trade-card signal-alert"><span><b>${s}</b> · 🟢 COMPRAR<br><span class="small">${a.reason} · Confluencia ${a.confidence}/100 · Entrada ${a.m.entryStage.toLowerCase()} · 1h + 15m · ${fmt(a.p)}</span></span></div>`).join('');
+  }
+  for(const {s,a} of items){
+    const prev=previous[s];
+    if(a.signal==='🟢 COMPRAR' && prev!=='🟢 COMPRAR') recordSignalEvent(s,a,'APARECIÓ');
+    if(a.signal!=='🟢 COMPRAR' && prev==='🟢 COMPRAR') recordSignalEvent(s,a,'DESAPARECIÓ');
+    if(prev!==a.signal && a.signal!=='🟡 MANTENER'){
+      notifyUser('Crypto Signal Radar · '+s,a.signal+' · '+a.reason);
+      const text=`${signalLabel(a.signal)} · ${s}
+Precio: ${fmt(a.p)}
+Confluencia: ${a.confidence}/100
+Entrada: ${a.m.entryStage}
+1h: ${a.h.score}/100 · 15m: ${a.m.score}/100
+RSI 15m: ${a.m.R.toFixed(1)}
+Volumen/20: ${a.m.vr.toFixed(2)}×
+${a.reason}
+
+Crypto Signal Radar V8.3.5`;
+      fetch('/api/telegram-send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text})}).catch(()=>{});
+    }
+    lastSignals[s]=a.signal;
+  }
+  save();
+  renderSignalHistory();
+}
+$('notify').onclick=async()=>{if('Notification' in window){const p=await Notification.requestPermission();$('notify').textContent=p==='granted'?'🔔 Activadas':'🔕 Bloqueadas'}};
+$('tg').onclick=async()=>{const b=$('tg');b.disabled=true;b.textContent='⏳ Probando Telegram…';try{const r=await fetch('/api/telegram-test',{cache:'no-store'});const j=await r.json();if(j.configured&&j.ok)alert('Telegram conectado correctamente.');else if(!j.configured)alert('Telegram todavía no está configurado en el backend. Completa TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en .env.');else alert('Telegram respondió con un error: '+(j.error||'desconocido'));}catch(e){alert('No se encontró el backend. Abrí la app desde http://localhost:3000 o desde el servidor donde ejecutaste Node.');}finally{b.disabled=false;b.textContent='📲 Probar Telegram'}};$('reload').onclick=load;$('bought').onclick=()=>{const s=$('sym').value,platform=$('platform').value,ars=+$('capital').value,q=+$('qty').value;if(!ars||!q)return alert('Completa cuánto invertiste en ARS y cuánta cripto recibiste.');if(trades.some(x=>x.s===s))return alert('Ya hay una operación activa en '+s+'.');const a=combined(s);if(!a)return alert('Todavía no hay datos suficientes para registrar la operación.');const e=a.p,id=Date.now();const executionArsPerCoin=ars/q; const tr={id,s,e,c:ars,ars,q,platform,at:id,hypothesis:a.reason,target:+$('target').value,executionArsPerCoin,binanceEntry:e};trades.push(tr);save();updateTrade();fetch('/api/trades/open',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(tr)}).catch(()=>{})};
+$('backtest').onclick=async()=>{const b=$('backtest');b.disabled=true;$('btStatus').textContent='Descargando 1h + 15m y simulando…';$('btResult').innerHTML='';try{const symbol=$('sym').value,target=+$('target').value,buyFee=+$('bf').value,sellFee=+$('sf').value;const [h,m]=await Promise.all([fetchMarket(symbol,'1h',500),fetchMarket(symbol,'15m',1000)]);const hc=h.filter(x=>x.closed),mc=m.filter(x=>x.closed);let open=null,tr=[];for(let j=100;j<mc.length-1;j++){const t=mc[j].time;const hRows=hc.filter(x=>x.time<=t).slice(-220),mRows=mc.slice(0,j+1);const ha=analyze(hRows),ma=analyze(mRows);if(!ha||!ma)continue;const confidence=Math.round(ha.score*.60+ma.score*.40),critical=ha.invalid||(ha.trend==='BAJISTA'&&ma.trend==='BAJISTA'&&ha.structure==='BAJISTA'&&ma.structure==='BAJISTA');const buy=confidence>=70&&ha.score>=60&&ma.score>=65&&ma.earlyEntry&&!critical;if(!open&&buy){open={entry:+mc[j+1].open,at:t,bars:0};continue}if(open){open.bars++;const cur=+mc[j].close,tp=targetPrice(open.entry,target,buyFee,sellFee),hit=+mc[j].high>=tp,invalid=ha.invalid;if(hit||invalid){const ex=hit?tp:cur,p=netPnl(open.entry,ex,buyFee,sellFee);tr.push({p,win:p>=target,reason:hit?'target':'invalid'});open=null}}}const wins=tr.filter(x=>x.win).length,sum=tr.reduce((a,x)=>a+x.p,0),avg=tr.length?sum/tr.length:0;$('btResult').innerHTML=`<div class="grid"><div><div class="metric">${tr.length}</div><div class="small">Operaciones simuladas</div></div><div><div class="metric">${tr.length?(wins/tr.length*100).toFixed(1):'0.0'}%</div><div class="small">Tasa de acierto</div></div><div><div class="metric">${avg.toFixed(2)}%</div><div class="small">P&L medio</div></div><div><div class="metric">${sum.toFixed(2)}%</div><div class="small">P&L acumulado simple</div></div></div><p class="small">Muestra: ${hc.length} velas 1h + ${mc.length} velas 15m · ${symbol}. La simulación es histórica y simplificada; no garantiza resultados futuros.</p>`;$('btStatus').textContent='Prueba terminada.'}catch(e){$('btStatus').textContent='Error: '+e.message}finally{b.disabled=false}};
+async function analyzeNow(){const btn=$('analyzeNow');btn.disabled=true;btn.textContent='⏳ ANALIZANDO…';try{await load();renderAnalysis()}catch(e){alert('No se pudo completar el análisis: '+e.message)}finally{btn.disabled=false;btn.textContent='🔎 ANALIZAR AHORA'}}$('analyzeNow').onclick=analyzeNow;
+async function tick(){try{await load();renderAnalysis();updateTrade()}catch(e){console.warn(e)}}
+setInterval(tick,60000);load().then(renderAnalysis);
+</script></body></html>

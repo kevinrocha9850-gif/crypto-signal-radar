@@ -1,0 +1,9 @@
+{
+  "name": "crypto-signal-radar",
+  "version": "8.3.5",
+  "private": true,
+  "description": "Crypto Signal Radar V8.3.5 - static Vercel frontend with serverless API",
+  "engines": {
+    "node": "22.x"
+  }
+}
