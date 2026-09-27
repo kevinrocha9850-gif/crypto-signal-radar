@@ -1,0 +1,18 @@
+name: Test NTFY
+
+on:
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enviar prueba al celular
+        run: |
+          curl \
+            -H "Title: Crypto Signal Radar" \
+            -H "Priority: high" \
+            -H "Tags: rocket" \
+            -d "🚀 PRUEBA: las notificaciones de Crypto Signal Radar funcionan correctamente." \
+            https://ntfy.sh/${{ secrets.NTFY_TOPIC }}
